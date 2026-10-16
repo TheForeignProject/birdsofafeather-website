@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://birdsofafeather.com.sg/sitemap.xml

@@ -1,0 +1,1573 @@
+<!DOCTYPE html>
+<html>
+  <head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="chrome=1,IE=edge" />
+	<title>birds website</title>
+	<style>
+		html {
+			height:100%;
+		}
+		body {
+			background-color:#FCFBF6;
+			margin:0;
+			height:100%;
+		}
+	</style>
+	<!-- copy these lines to your document head: -->
+
+	<meta name="viewport" content="user-scalable=yes, initial-scale=1.0, width=440" />
+	<link href='https://fonts.googleapis.com/css?family=Nova+Mono&subset=latin' rel='stylesheet' type='text/css'>
+	<style>
+@font-face {
+    font-family: 'Molgan';
+    src: url('birds%20website.hyperesources/Molgan-Regular.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+}
+</style>
+	<link href='https://fonts.googleapis.com/css?family=Montserrat+Alternates&subset=latin' rel='stylesheet' type='text/css'>
+<!-- 1. Google 外部字体链接 -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css?family=Nova+Mono&subset=latin" rel="stylesheet" type="text/css">
+<link href="https://fonts.googleapis.com/css?family=Montserrat+Alternates&subset=latin" rel="stylesheet" type="text/css">
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
+
+<!-- 2. 全局样式 -->
+<style>
+/* Molgan 自定义字体 */
+@font-face {
+  font-family: 'Molgan';
+  src: url('birds%20website.hyperesources/Molgan-Regular.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* 全局拦截：所有设置了 American Typewriter 的文字自动替换为 Special Elite */
+[style*="American Typewriter"],
+[style*="AmericanTypewriter"] {
+  font-family: 'Special Elite', 'American Typewriter', monospace !important;
+}
+
+.typewriter-text {
+  font-family: 'Special Elite', 'American Typewriter', monospace !important;
+}
+
+/* 悬停变灰交互 */
+.hover-gray {
+  transition: color 0.3s ease, opacity 0.3s ease !important;
+  cursor: pointer !important;
+}
+.hover-gray:hover {
+  color: #888888 !important;
+  opacity: 0.7 !important;
+}
+
+/* 确保所有 Hype 场景内部的元素正常接收鼠标点击 */
+.HYPE_scene, .HYPE_element {
+  pointer-events: auto;
+}
+
+/* 绝对杜绝粒子画板阻挡点击 */
+#hype-cursor-particles {
+  pointer-events: none !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}
+
+/* 小鸟自定义鼠标指针 */
+html, body, .HYPE_document, * {
+  cursor: url('birds%20website.hyperesources/bird-cursor.png') 6 5, auto !important;
+}
+a, button, [onclick], .hover-gray, .menu-item {
+  cursor: url('birds%20website.hyperesources/bird-cursor.png') 6 5, pointer !important;
+}
+</style>
+
+<!-- 3. 🐦 小鸟阶梯跟随特效 (严格单例 + 永不遮挡点击) -->
+<script>
+(function() {
+  if (window.__birdParticlesInitialized || document.getElementById('hype-cursor-particles')) {
+    return;
+  }
+  window.__birdParticlesInitialized = true;
+
+  function initParticleCanvas() {
+    var existing = document.getElementById('hype-cursor-particles');
+    if (existing) return;
+
+    var canvas = document.createElement('canvas');
+    canvas.id = 'hype-cursor-particles';
+    canvas.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none !important;touch-action:none !important;z-index:9999;';
+
+    document.documentElement.appendChild(canvas);
+    setupParticles(canvas);
+  }
+
+  function setupParticles(canvas) {
+    var ctx = canvas.getContext('2d');
+    var birdImg = new Image();
+    birdImg.src = 'birds%20website.hyperesources/bird-cursor.png';
+
+    function resize() {
+      var dpr = window.devicePixelRatio || 1;
+      canvas.width = window.innerWidth * dpr;
+      canvas.height = window.innerHeight * dpr;
+      ctx.scale(dpr, dpr);
+    }
+    window.addEventListener('resize', resize, { passive: true });
+    resize();
+
+    var mouse = { x: -100, y: -100 };
+    var globalAlphaMultiplier = 0;
+    var isMoving = false;
+    var moveTimer = null;
+
+    window.addEventListener('mousemove', function(e) {
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
+      
+      isMoving = true;
+      clearTimeout(moveTimer);
+      
+      moveTimer = setTimeout(function() {
+        isMoving = false;
+      }, 100);
+    }, { passive: true });
+
+    var followers = [
+      { x: -100, y: -100, size: 15, baseAlpha: 0.8, ease: 0.22 },
+      { x: -100, y: -100, size: 11, baseAlpha: 0.5, ease: 0.14 },
+      { x: -100, y: -100, size: 7,  baseAlpha: 0.3, ease: 0.08 }
+    ];
+
+    function animate() {
+      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+      if (isMoving) {
+        if (globalAlphaMultiplier < 1) globalAlphaMultiplier += 0.12;
+      } else {
+        if (globalAlphaMultiplier > 0) globalAlphaMultiplier -= 0.06;
+      }
+
+      var leader = mouse;
+
+      for (var i = 0; i < followers.length; i++) {
+        var f = followers[i];
+        f.x += (leader.x - f.x) * f.ease;
+        f.y += (leader.y - f.y) * f.ease;
+
+        if (globalAlphaMultiplier > 0.01 && birdImg.complete && birdImg.naturalWidth > 0) {
+          ctx.save();
+          ctx.globalAlpha = f.baseAlpha * globalAlphaMultiplier;
+          ctx.translate(f.x, f.y);
+          ctx.drawImage(birdImg, -f.size / 2, -f.size / 2, f.size, f.size);
+          ctx.restore();
+        }
+
+        leader = f;
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initParticleCanvas);
+  } else {
+    initParticleCanvas();
+  }
+})();
+</script>
+
+<!-- 4. 浏览器前进/后退安全监听（防误切 Home、防重复触发） -->
+<script>
+window.addEventListener('popstate', function(e) {
+  var doc = HYPE.documents[Object.keys(HYPE.documents)[0]];
+  if (!doc) return;
+
+  var currentScene = doc.currentSceneName();
+  var h = (window.location.hash || '').toLowerCase();
+
+  var targetScene = '';
+  if (h === '#mainmenu' || h === '#menu') {
+    targetScene = 'mainmenu';
+  } else if (h === '#events') {
+    targetScene = 'events';
+  } else if (h === '#ourstory' || h === '#story') {
+    targetScene = 'our story';
+  } else if (h === '#home') {
+    targetScene = 'home';
+  }
+
+  // 只有目标场景明确，且与当前所在场景不同时才执行跳转与回滚
+  if (targetScene && targetScene !== currentScene) {
+    doc.showSceneNamed(targetScene);
+    window.scrollTo(0, 0);
+  }
+});
+</script>
+
+	<!-- end copy -->
+  </head>
+  <body>
+	<!-- copy these lines to your document: -->
+
+	<div id="birdswebsite_hype_container" class="HYPE_document" style="margin:auto;position:relative;width:100%;height:6800px;overflow:hidden;">
+		<script type="text/javascript" charset="utf-8" src="birds%20website.hyperesources/birdswebsite_hype_generated_script.js?82226"></script>
+	</div>
+
+	<!-- end copy -->
+	
+
+
+	<!-- text content for search engines: -->
+
+	<div style="display:none" aria-hidden=true>
+
+		<div></div>
+		<div>View Menu
+</div>
+		<div>Welcome</div>
+		<div>Cuisine + Cocktails + Design + Gathering/Hospitality</div>
+		<div>RESERVE A TABLE</div>
+		<div>What’s On This September
+Birds of a Feather reopens on September 5th.
+Step into our new chapter on Amoy Street, with a renewed space, an evolved menu and the same warmth that has shaped Birds for the past ten years.
+Come for lunch, dinner or cocktails at the bar, and be among the first to settle back in.</div>
+		<div>Our Menu</div>
+		<div>Reservations</div>
+		<div>Instinct, Expression, Craft, Precision</div>
+		<div>Events & Celebrations</div>
+		<div>Dine · Gather · Celebrate · Linger</div>
+		<div>A Cuisine of
+ Our Own</div>
+		<div>A Table Worth Settling Into</div>
+		<div>Made for the Occasion</div>
+		<div>Come for a leisurely lunch, dinner with friends or cocktails at the bar.Whether it is a table for two, a gathering with friends or an occasion worth celebrating, Birds sets the scene for good food, easy conversation and time well spent.Settle in, take your time and make the table yours. EndFragment</div>
+		<div>Menu</div>
+		<div>From intimate dinners and milestone celebrations to corporate occasions, brand events and weddings, Birds offers a distinctive setting for moments both personal and professional.
+
+ With bespoke menus, thoughtful drinks and warm hospitality, every occasion is shaped around the people, the moment and the way you want to gather.</div>
+		<div>Make an Enquiry
+</div>
+		<div>Reserve a Table
+</div>
+		<div>Explore Events
+</div>
+		<div>For ten years, Birds of a Feather has been a place on Amoy Street for food, drinks and people to gather with ease.
+
+ Today, Birds enters a new chapter — with a renewed space, an evolved menu and the same warmth and spirit that have shaped the restaurant from the beginning. Over time, its cooking has grown into a culinary language of its own — rooted in Sichuan flavour, shaped by French technique and open to influences from around the world.</div>
+		<div>Reservations
+</div>
+		<div>Events</div>
+		<div>Where Food, Drinks and People Come Together</div>
+		<div>Natural light, warm textures and considered details create a space that feels relaxed yet refined. From lunch and dinner to cocktails at the bar and celebrations around the table, Birds is designed for good food, easy conversation and time well spent. Come for the food, stay for the atmosphere and settle in for as long as you like.</div>
+		<div>Sichuan is part of our instinct — its fragrance, heat, acidity, depth and balance. Global influences allow each dish to take on its own character.
+
+ Over ten years, these ideas have evolved into a culinary language of our own — layered, distinctive and free from convention. Every element is considered, from flavour and composition to presentation and the pieces chosen for the table.</div>
+		<div>VIEW MENU</div>
+		<div>Our Food Philosophy
+
+Progressive Cuisine with Chuan Influence; Imagination is where we begin. Ten years in, and we still cook like it's the first day. Sichuan is our roots. It drives us and constantly sparks something new. Every dish is our way of sharing a thought, telling a story, and inviting you into a culture we're proud to call ours.</div>
+		<div>All prices subject to prevailing GST and a 10% service charge.
+</div>
+		<div> 顶部主标题 EXECUTIVE MENU
+$35.90 Per Set
+(11:30am - 2:30pm)
+ 1. Starters Starters (Choose one)
+Sichuan 'Kimchi' (V)
+House-made 'Kimchi', Yuzu Jam, Pear, Bocconcini, Parmesan, Brioche
+-or-
+Crab and Avocado Bruschetta +$5
+Avocado Guacamole with Crab, Green Apple, Tonburi, Brioche
+-or-
+Pork Dumplings
+Sichuan Dressing, Butternut Purée, Sage
+-or-
+Abalone.Prawn.Clam +$8
+Raw and Cooked Seafood, Green Tiger's Milk, Wheat Noodle, Guindillas, Numb, Cold
+-or-
+Burnt Chilli Eggplant (V)
+House-made Flatbread, Century Egg, Coriander Purée, Pickled Onion Head
+ 2. Seconds Seconds (Choose one)
+Chairman Dan
+'Dan Dan Noodle' Capellini, Pork Ragout, Egg Confit, Hint of Spiciness
+-or-
+Barramundi Chazuke +$8
+Pan-seared Fillet, Sichuan Hot and Sour Broth, Rice, Ikura
+-or-
+Mapo Tofu
+Classic, Minced Beef, Japanese Rice
+-or-
+Mushroom Mafaldine (V)
+Mafaldine, Dried Mixed Mushroom, Sautéed with Bullet Head, Mushroom Sabayon
+-or-
+Strange Burrata (V) +$3
+Strange Flavoured Sauce, Peanut Crumbs, Olive Tapenade, Cherry Tomato, 'Pain Aux Yacai'
+ 3. Sides Sides
+Spice Fries (V) $16
+House-made Spice, Sour Cream Dip
+Seasonal Vegetables (V) $23
+Sautéed Vegetables Sichuan Way, Olive Soil, Feta
+Pear Salad (V) $21
+Asian Pear, Parmesan, Vine Pepper Citrus Dressing, Caramelized Nuts
+Baby Coloured Potato (V) $18
+Roasted Baby Potatoes, Ginger Butter Glaze, Parmesan
+ 4. Add-on Add-on
+Sparkling Ice Jelly +$6
+Kiwi, Mint, Dill Coulis, Muscat Grape & Mint Granita
+Wild Strawberry +$5
+Mini Gateaux, Hawthorn Berry Compote
+Tea +$4.5
+English Breakfast • Jasmine • Peppermint • Darjeeling • Organic Chamomile
+Coffee +$4.5
+Black, White
+</div>
+		<div> 顶部标题与引言 Leisure
+$68++ per pax (min. 2 pax)
+In Sichuan, "Leisure" (闲) is a discipline, and a way of life. It's a meal without urgency, savoured at a pace that lets flavour unfold rather than rushing to the next course. It's a spirit that invites all to sit and share at the table; letting the meal reveal itself course by course.
+ 1. Starters Starters
+Crab and Avocado Bruschetta
+Avocado Guacamole with Crab, Green Apple, Tonburi, Brioche
+&
+Burnt Chilli Eggplant (V)
+House-made Flatbread, Century Egg, Coriander Purée, Pickled Onion Head
+-or-
+Find the Chicken in the Chillies
+Wok-Fried Popcorn Chicken Sichuan Style
+ 2. Seconds Seconds
+Strange Burrata (V)
+Strange Flavoured Sauce, Peanut Crumbs, Olive Tapenade, Cherry Tomato, 'Pain Aux Yacai'
+-or-
+Wok-Fried Tiger Prawn +$20
+Yi Bing Yacai, Radicchio, Coriander Purée
+-or-
+Mushroom Mafaldine
+Mafaldine, Dried Mixed Mushroom, Sautéed with Bullet Head, Mushroom Sabayon
+ 3. Big Plates Big Plates
+Loup De Mer +$38
+Whole European Seabass Seared with Scale, Saffron Yellow Pepper Broth, Petite Napa Cabbage, Dongqu Shaoxing
+-or-
+Homestyle Pork Belly Rice
+Homestyle Flavoured, Tea Tree Mushroom Garlic Rice, Jamón Ibérico, Egg Confit, Kale, Truffle
+ 4. Desserts Desserts
+Red Date ‘Clafoutis’ +$8
+Fig, Macadamia, Buckwheat Candy, Mascarpone Crémeux, Red Date Jelly
+-or-
+Glutinous Rice Cake
+Sesame Parfait, Pistachio, Red Sugar Caramel
+</div>
+		<div> 顶部标题与引言 AnYi
+$118++ per pax (min. 2 pax)
+“AnYi”（安逸）in Sichuan means to feel comfortable and relaxed – the best feeling to have during a meal. As such, in this menu, we have curated our house specialty dishes; designed to bring you on a journey of comforting taste and familiarity.
+ 1. Sichuan 'Kimchi' Sichuan ‘Kimchi’ (V)
+Housemade ‘Kimchi’, Yuzu Jam, Pear, Bocconcini, Parmesan, Brioche
+ 2. Abalone.Prawn.Clam Abalone.Prawn.Clam
+Raw and Cooked Seafood, Green Tiger’s Milk, Wheat Noodle, Guindillas, Numb, Cold
+ 3. Burnt Chilli Eggplant Burnt Chilli Eggplant (V)
+House-made Flatbread, Century Egg, Coriander Purée, Pickled Onion Head
+ 4. Crispy Frog Legs Crispy Frog Legs
+House-made Chilli Sand, Green Garlic Purée, House Pickles
+ 5. Mushroom Mafaldine Mushroom Mafaldine
+Mafaldine, Dried Mixed Mushroom, Sautéed with Bullet Head, Mushroom Sabayon
+ 6. Loup De Mer Loup De Mer
+Whole European Seabass Seared with Scale, Saffron Yellow Pepper Broth, Petite Napa Cabbage, Dongqu Shaoxing
+ 7. Sparkling Ice Jelly Sparkling Ice Jelly
+Kiwi, Moët, Dill Coulis, Muscat Grape & Mint Granita
+ 8. Red Date 'Clafoutis' Red Date ‘Clafoutis’
+Fig, Macadamia, Buckwheat Candy, Mascarpone Crémeux, Red Date Jelly
+</div>
+		<div>Weddings</div>
+		<div>PRIVATE EVENTS</div>
+		<div>For business dinners, brand events and private corporate occasions, Birds of a Feather offers a distinctive setting in the heart of Singapore. Bespoke menus, considered drinks and warm hospitality create an event that feels polished without losing character.</div>
+		<div>ENQUIRE NOW
+</div>
+		<div>A Distinctive Setting for Every Occasion
+</div>
+		<div>Book An Event
+</div>
+		<div>Corporate Events</div>
+		<div>From intimate dinners to brand events, weddings and milestone celebrations, Birds of a Feather offers a distinctive setting for up to 80 seated guests.Bespoke menus, considered drinks and warm hospitality shape every occasion into something distinctly yours. EndFragment</div>
+		<div>Making every moment yours</div>
+		<div>Birthdays, engagements and milestone moments come to life in a room made for gathering. From long seated meals to lively drinks-led occasions, every celebration is shaped with flavour, atmosphere and the people who matter most.</div>
+		<div>Book An Event</div>
+		<div>Set across two shophouses on Amoy Street, Birds of a Feather offers an intimate setting shaped by natural light, considered design and warm hospitality.
+
+ From private gatherings and weddings to corporate occasions and celebrations, the space welcomes up to 80 seated guests.Bespoke menus, thoughtful drinks and attentive service shape an occasion that feels personal, considered and distinctly yours.</div>
+		<div>From first drinks to final toasts, every detail at Birds is shaped with care.
+
+ Food, drinks, service and setting are carefully balanced, giving each occasion a sense of character and ease.Whatever the occasion, we create the setting — you bring the people, the stories and the moment.</div>
+		<div>Romantic light, warm timber and an intimate shophouse setting create a wedding that feels personal from the first toast to the final course. Birds of a Feather pairs bespoke menus, thoughtful drinks and attentive service for celebrations made distinctly yours.</div>
+		<div>Celebrations</div>
+		<div>The Hand Behind the CookingEndFragment</div>
+		<div>Chef Eugene See joined Birds of a Feather shortly after it opened in 2016, bringing with him a foundation in a few European dining and fine dining establishment.
+
+Sichuan cuisine was unfamiliar territory. That became part of the journey.
+
+Over the years, repeated visits to Chengdu, conversations with chefs and makers, and a deepening understanding of Sichuan flavours, ingredients and techniques have shaped the way he cooks. Rather than following a fixed formula, Eugene draws from Sichuan flavour profiles, French technique, ideas from around the world and his own creative instinct — allowing each dish to find its own character. Nearly a decade later, that process of curiosity and exploration continues to shape the culinary language of Birds.</div>
+		<div>Our Story</div>
+		<div>A Decade of Exploration
+EndFragment</div>
+		<div>Come Home to Birds of a Feather</div>
+		<div>A NEST FOR KINDRED SPIRITS</div>
+		<div>Ten Years, Still Evolving, From 2016 to 2026 Birds of a Feather began on Amoy Street in 2016 with a simple idea: to create a place where different flavours, cultures and people could meet.Over the past decade, Birds has continued to evolve, in its cooking, its space and the way people experience it. What began as an exchange of culinary ideas has grown into a language of its own, rooted in Sichuan flavour, shaped by French technique and open to influences from around the world.Our name speaks to the instinct that certain people will always find their way to one another. It also carries an older reference to the Golden Sun Bird of Chengdu, a symbol of light, continuity and shared spirit. That sense of warmth, belonging and shared spirit sits at the heart of Birds.Set within two heritage shophouses, the restaurant and bar is shaped by natural light, warm timber, thoughtful details and a renewed sense of hospitality. From the dining room to the bar, it is a home for food, drinks, conversation and the people who make a table come alive.[if gte mso 9]><xml>
+ <w:WordDocument>
+  <w:View>Normal</w:View>
+  <w:Zoom>0</w:Zoom>
+  <w:TrackMoves>false</w:TrackMoves>
+  <w:TrackFormatting/>
+  <w:PunctuationKerning/>
+  <w:DrawingGridVerticalSpacing>7.8 磅</w:DrawingGridVerticalSpacing>
+  <w:DisplayHorizontalDrawingGridEvery>0</w:DisplayHorizontalDrawingGridEvery>
+  <w:DisplayVerticalDrawingGridEvery>2</w:DisplayVerticalDrawingGridEvery>
+  <w:ValidateAgainstSchemas/>
+  <w:SaveIfXMLInvalid>false</w:SaveIfXMLInvalid>
+  <w:IgnoreMixedContent>false</w:IgnoreMixedContent>
+  <w:AlwaysShowPlaceholderText>false</w:AlwaysShowPlaceholderText>
+  <w:DoNotPromoteQF/>
+  <w:LidThemeOther>EN-US</w:LidThemeOther>
+  <w:LidThemeAsian>ZH-CN</w:LidThemeAsian>
+  <w:LidThemeComplexScript>X-NONE</w:LidThemeComplexScript>
+  <w:Compatibility>
+   <w:SpaceForUL/>
+   <w:BalanceSingleByteDoubleByteWidth/>
+   <w:DoNotLeaveBackslashAlone/>
+   <w:ULTrailSpace/>
+   <w:DoNotExpandShiftReturn/>
+   <w:AdjustLineHeightInTable/>
+   <w:BreakWrappedTables/>
+   <w:SnapToGridInCell/>
+   <w:WrapTextWithPunct/>
+   <w:UseAsianBreakRules/>
+   <w:DontGrowAutofit/>
+   <w:SplitPgBreakAndParaMark/>
+   <w:EnableOpenTypeKerning/>
+   <w:DontFlipMirrorIndents/>
+   <w:OverrideTableStyleHps/>
+   <w:UseFELayout/>
+  </w:Compatibility>
+  <w:DoNotOptimizeForBrowser/>
+  <m:mathPr>
+   <m:mathFont m:val="Cambria Math"/>
+   <m:brkBin m:val="before"/>
+   <m:brkBinSub m:val="&#45;-"/>
+   <m:smallFrac m:val="off"/>
+   <m:dispDef/>
+   <m:lMargin m:val="0"/>
+   <m:rMargin m:val="0"/>
+   <m:defJc m:val="centerGroup"/>
+   <m:wrapIndent m:val="1440"/>
+   <m:intLim m:val="subSup"/>
+   <m:naryLim m:val="undOvr"/>
+  </m:mathPr></w:WordDocument>
+</xml><![endif][if gte mso 9]><xml>
+ <w:LatentStyles DefLockedState="false" DefUnhideWhenUsed="false"
+  DefSemiHidden="false" DefQFormat="false" DefPriority="99"
+  LatentStyleCount="376">
+  <w:LsdException Locked="false" Priority="0" QFormat="true" Name="Normal"/>
+  <w:LsdException Locked="false" Priority="9" QFormat="true" Name="heading 1"/>
+  <w:LsdException Locked="false" Priority="9" SemiHidden="true"
+   UnhideWhenUsed="true" QFormat="true" Name="heading 2"/>
+  <w:LsdException Locked="false" Priority="9" SemiHidden="true"
+   UnhideWhenUsed="true" QFormat="true" Name="heading 3"/>
+  <w:LsdException Locked="false" Priority="9" SemiHidden="true"
+   UnhideWhenUsed="true" QFormat="true" Name="heading 4"/>
+  <w:LsdException Locked="false" Priority="9" SemiHidden="true"
+   UnhideWhenUsed="true" QFormat="true" Name="heading 5"/>
+  <w:LsdException Locked="false" Priority="9" SemiHidden="true"
+   UnhideWhenUsed="true" QFormat="true" Name="heading 6"/>
+  <w:LsdException Locked="false" Priority="9" SemiHidden="true"
+   UnhideWhenUsed="true" QFormat="true" Name="heading 7"/>
+  <w:LsdException Locked="false" Priority="9" SemiHidden="true"
+   UnhideWhenUsed="true" QFormat="true" Name="heading 8"/>
+  <w:LsdException Locked="false" Priority="9" SemiHidden="true"
+   UnhideWhenUsed="true" QFormat="true" Name="heading 9"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="index 1"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="index 2"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="index 3"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="index 4"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="index 5"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="index 6"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="index 7"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="index 8"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="index 9"/>
+  <w:LsdException Locked="false" Priority="39" SemiHidden="true"
+   UnhideWhenUsed="true" Name="toc 1"/>
+  <w:LsdException Locked="false" Priority="39" SemiHidden="true"
+   UnhideWhenUsed="true" Name="toc 2"/>
+  <w:LsdException Locked="false" Priority="39" SemiHidden="true"
+   UnhideWhenUsed="true" Name="toc 3"/>
+  <w:LsdException Locked="false" Priority="39" SemiHidden="true"
+   UnhideWhenUsed="true" Name="toc 4"/>
+  <w:LsdException Locked="false" Priority="39" SemiHidden="true"
+   UnhideWhenUsed="true" Name="toc 5"/>
+  <w:LsdException Locked="false" Priority="39" SemiHidden="true"
+   UnhideWhenUsed="true" Name="toc 6"/>
+  <w:LsdException Locked="false" Priority="39" SemiHidden="true"
+   UnhideWhenUsed="true" Name="toc 7"/>
+  <w:LsdException Locked="false" Priority="39" SemiHidden="true"
+   UnhideWhenUsed="true" Name="toc 8"/>
+  <w:LsdException Locked="false" Priority="39" SemiHidden="true"
+   UnhideWhenUsed="true" Name="toc 9"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Normal Indent"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="footnote text"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="annotation text"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="header"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="footer"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="index heading"/>
+  <w:LsdException Locked="false" Priority="35" SemiHidden="true"
+   UnhideWhenUsed="true" QFormat="true" Name="caption"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="table of figures"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="envelope address"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="envelope return"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="footnote reference"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="annotation reference"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="line number"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="page number"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="endnote reference"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="endnote text"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="table of authorities"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="macro"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="toa heading"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="List"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="List Bullet"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="List Number"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="List 2"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="List 3"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="List 4"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="List 5"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="List Bullet 2"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="List Bullet 3"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="List Bullet 4"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="List Bullet 5"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="List Number 2"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="List Number 3"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="List Number 4"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="List Number 5"/>
+  <w:LsdException Locked="false" Priority="10" QFormat="true" Name="Title"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Closing"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Signature"/>
+  <w:LsdException Locked="false" Priority="1" SemiHidden="true"
+   UnhideWhenUsed="true" Name="Default Paragraph Font"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Body Text"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Body Text Indent"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="List Continue"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="List Continue 2"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="List Continue 3"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="List Continue 4"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="List Continue 5"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Message Header"/>
+  <w:LsdException Locked="false" Priority="11" QFormat="true" Name="Subtitle"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Salutation"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Date"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Body Text First Indent"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Body Text First Indent 2"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Note Heading"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Body Text 2"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Body Text 3"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Body Text Indent 2"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Body Text Indent 3"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Block Text"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Hyperlink"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="FollowedHyperlink"/>
+  <w:LsdException Locked="false" Priority="22" QFormat="true" Name="Strong"/>
+  <w:LsdException Locked="false" Priority="20" QFormat="true" Name="Emphasis"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Document Map"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Plain Text"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="E-mail Signature"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="HTML Top of Form"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="HTML Bottom of Form"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Normal (Web)"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="HTML Acronym"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="HTML Address"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="HTML Cite"/>
+  <w:LsdException Locked="false" Priority="0" SemiHidden="true"
+   UnhideWhenUsed="true" Name="HTML Code"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="HTML Definition"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="HTML Keyboard"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="HTML Preformatted"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="HTML Sample"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="HTML Typewriter"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="HTML Variable"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Normal Table"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="annotation subject"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="No List"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Outline List 1"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Outline List 2"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Outline List 3"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Table Simple 1"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Table Simple 2"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Table Simple 3"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Table Classic 1"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Table Classic 2"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Table Classic 3"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Table Classic 4"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Table Colorful 1"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Table Colorful 2"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Table Colorful 3"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Table Columns 1"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Table Columns 2"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Table Columns 3"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Table Columns 4"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Table Columns 5"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Table Grid 1"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Table Grid 2"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Table Grid 3"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Table Grid 4"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Table Grid 5"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Table Grid 6"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Table Grid 7"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Table Grid 8"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Table List 1"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Table List 2"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Table List 3"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Table List 4"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Table List 5"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Table List 6"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Table List 7"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Table List 8"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Table 3D effects 1"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Table 3D effects 2"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Table 3D effects 3"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Table Contemporary"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Table Elegant"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Table Professional"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Table Subtle 1"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Table Subtle 2"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Table Web 1"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Table Web 2"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Table Web 3"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Balloon Text"/>
+  <w:LsdException Locked="false" Priority="39" Name="Table Grid"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Table Theme"/>
+  <w:LsdException Locked="false" SemiHidden="true" Name="Placeholder Text"/>
+  <w:LsdException Locked="false" Priority="1" QFormat="true" Name="No Spacing"/>
+  <w:LsdException Locked="false" Priority="60" Name="Light Shading"/>
+  <w:LsdException Locked="false" Priority="61" Name="Light List"/>
+  <w:LsdException Locked="false" Priority="62" Name="Light Grid"/>
+  <w:LsdException Locked="false" Priority="63" Name="Medium Shading 1"/>
+  <w:LsdException Locked="false" Priority="64" Name="Medium Shading 2"/>
+  <w:LsdException Locked="false" Priority="65" Name="Medium List 1"/>
+  <w:LsdException Locked="false" Priority="66" Name="Medium List 2"/>
+  <w:LsdException Locked="false" Priority="67" Name="Medium Grid 1"/>
+  <w:LsdException Locked="false" Priority="68" Name="Medium Grid 2"/>
+  <w:LsdException Locked="false" Priority="69" Name="Medium Grid 3"/>
+  <w:LsdException Locked="false" Priority="70" Name="Dark List"/>
+  <w:LsdException Locked="false" Priority="71" Name="Colorful Shading"/>
+  <w:LsdException Locked="false" Priority="72" Name="Colorful List"/>
+  <w:LsdException Locked="false" Priority="73" Name="Colorful Grid"/>
+  <w:LsdException Locked="false" Priority="60" Name="Light Shading Accent 1"/>
+  <w:LsdException Locked="false" Priority="61" Name="Light List Accent 1"/>
+  <w:LsdException Locked="false" Priority="62" Name="Light Grid Accent 1"/>
+  <w:LsdException Locked="false" Priority="63" Name="Medium Shading 1 Accent 1"/>
+  <w:LsdException Locked="false" Priority="64" Name="Medium Shading 2 Accent 1"/>
+  <w:LsdException Locked="false" Priority="65" Name="Medium List 1 Accent 1"/>
+  <w:LsdException Locked="false" SemiHidden="true" Name="Revision"/>
+  <w:LsdException Locked="false" Priority="34" QFormat="true"
+   Name="List Paragraph"/>
+  <w:LsdException Locked="false" Priority="29" QFormat="true" Name="Quote"/>
+  <w:LsdException Locked="false" Priority="30" QFormat="true"
+   Name="Intense Quote"/>
+  <w:LsdException Locked="false" Priority="66" Name="Medium List 2 Accent 1"/>
+  <w:LsdException Locked="false" Priority="67" Name="Medium Grid 1 Accent 1"/>
+  <w:LsdException Locked="false" Priority="68" Name="Medium Grid 2 Accent 1"/>
+  <w:LsdException Locked="false" Priority="69" Name="Medium Grid 3 Accent 1"/>
+  <w:LsdException Locked="false" Priority="70" Name="Dark List Accent 1"/>
+  <w:LsdException Locked="false" Priority="71" Name="Colorful Shading Accent 1"/>
+  <w:LsdException Locked="false" Priority="72" Name="Colorful List Accent 1"/>
+  <w:LsdException Locked="false" Priority="73" Name="Colorful Grid Accent 1"/>
+  <w:LsdException Locked="false" Priority="60" Name="Light Shading Accent 2"/>
+  <w:LsdException Locked="false" Priority="61" Name="Light List Accent 2"/>
+  <w:LsdException Locked="false" Priority="62" Name="Light Grid Accent 2"/>
+  <w:LsdException Locked="false" Priority="63" Name="Medium Shading 1 Accent 2"/>
+  <w:LsdException Locked="false" Priority="64" Name="Medium Shading 2 Accent 2"/>
+  <w:LsdException Locked="false" Priority="65" Name="Medium List 1 Accent 2"/>
+  <w:LsdException Locked="false" Priority="66" Name="Medium List 2 Accent 2"/>
+  <w:LsdException Locked="false" Priority="67" Name="Medium Grid 1 Accent 2"/>
+  <w:LsdException Locked="false" Priority="68" Name="Medium Grid 2 Accent 2"/>
+  <w:LsdException Locked="false" Priority="69" Name="Medium Grid 3 Accent 2"/>
+  <w:LsdException Locked="false" Priority="70" Name="Dark List Accent 2"/>
+  <w:LsdException Locked="false" Priority="71" Name="Colorful Shading Accent 2"/>
+  <w:LsdException Locked="false" Priority="72" Name="Colorful List Accent 2"/>
+  <w:LsdException Locked="false" Priority="73" Name="Colorful Grid Accent 2"/>
+  <w:LsdException Locked="false" Priority="60" Name="Light Shading Accent 3"/>
+  <w:LsdException Locked="false" Priority="61" Name="Light List Accent 3"/>
+  <w:LsdException Locked="false" Priority="62" Name="Light Grid Accent 3"/>
+  <w:LsdException Locked="false" Priority="63" Name="Medium Shading 1 Accent 3"/>
+  <w:LsdException Locked="false" Priority="64" Name="Medium Shading 2 Accent 3"/>
+  <w:LsdException Locked="false" Priority="65" Name="Medium List 1 Accent 3"/>
+  <w:LsdException Locked="false" Priority="66" Name="Medium List 2 Accent 3"/>
+  <w:LsdException Locked="false" Priority="67" Name="Medium Grid 1 Accent 3"/>
+  <w:LsdException Locked="false" Priority="68" Name="Medium Grid 2 Accent 3"/>
+  <w:LsdException Locked="false" Priority="69" Name="Medium Grid 3 Accent 3"/>
+  <w:LsdException Locked="false" Priority="70" Name="Dark List Accent 3"/>
+  <w:LsdException Locked="false" Priority="71" Name="Colorful Shading Accent 3"/>
+  <w:LsdException Locked="false" Priority="72" Name="Colorful List Accent 3"/>
+  <w:LsdException Locked="false" Priority="73" Name="Colorful Grid Accent 3"/>
+  <w:LsdException Locked="false" Priority="60" Name="Light Shading Accent 4"/>
+  <w:LsdException Locked="false" Priority="61" Name="Light List Accent 4"/>
+  <w:LsdException Locked="false" Priority="62" Name="Light Grid Accent 4"/>
+  <w:LsdException Locked="false" Priority="63" Name="Medium Shading 1 Accent 4"/>
+  <w:LsdException Locked="false" Priority="64" Name="Medium Shading 2 Accent 4"/>
+  <w:LsdException Locked="false" Priority="65" Name="Medium List 1 Accent 4"/>
+  <w:LsdException Locked="false" Priority="66" Name="Medium List 2 Accent 4"/>
+  <w:LsdException Locked="false" Priority="67" Name="Medium Grid 1 Accent 4"/>
+  <w:LsdException Locked="false" Priority="68" Name="Medium Grid 2 Accent 4"/>
+  <w:LsdException Locked="false" Priority="69" Name="Medium Grid 3 Accent 4"/>
+  <w:LsdException Locked="false" Priority="70" Name="Dark List Accent 4"/>
+  <w:LsdException Locked="false" Priority="71" Name="Colorful Shading Accent 4"/>
+  <w:LsdException Locked="false" Priority="72" Name="Colorful List Accent 4"/>
+  <w:LsdException Locked="false" Priority="73" Name="Colorful Grid Accent 4"/>
+  <w:LsdException Locked="false" Priority="60" Name="Light Shading Accent 5"/>
+  <w:LsdException Locked="false" Priority="61" Name="Light List Accent 5"/>
+  <w:LsdException Locked="false" Priority="62" Name="Light Grid Accent 5"/>
+  <w:LsdException Locked="false" Priority="63" Name="Medium Shading 1 Accent 5"/>
+  <w:LsdException Locked="false" Priority="64" Name="Medium Shading 2 Accent 5"/>
+  <w:LsdException Locked="false" Priority="65" Name="Medium List 1 Accent 5"/>
+  <w:LsdException Locked="false" Priority="66" Name="Medium List 2 Accent 5"/>
+  <w:LsdException Locked="false" Priority="67" Name="Medium Grid 1 Accent 5"/>
+  <w:LsdException Locked="false" Priority="68" Name="Medium Grid 2 Accent 5"/>
+  <w:LsdException Locked="false" Priority="69" Name="Medium Grid 3 Accent 5"/>
+  <w:LsdException Locked="false" Priority="70" Name="Dark List Accent 5"/>
+  <w:LsdException Locked="false" Priority="71" Name="Colorful Shading Accent 5"/>
+  <w:LsdException Locked="false" Priority="72" Name="Colorful List Accent 5"/>
+  <w:LsdException Locked="false" Priority="73" Name="Colorful Grid Accent 5"/>
+  <w:LsdException Locked="false" Priority="60" Name="Light Shading Accent 6"/>
+  <w:LsdException Locked="false" Priority="61" Name="Light List Accent 6"/>
+  <w:LsdException Locked="false" Priority="62" Name="Light Grid Accent 6"/>
+  <w:LsdException Locked="false" Priority="63" Name="Medium Shading 1 Accent 6"/>
+  <w:LsdException Locked="false" Priority="64" Name="Medium Shading 2 Accent 6"/>
+  <w:LsdException Locked="false" Priority="65" Name="Medium List 1 Accent 6"/>
+  <w:LsdException Locked="false" Priority="66" Name="Medium List 2 Accent 6"/>
+  <w:LsdException Locked="false" Priority="67" Name="Medium Grid 1 Accent 6"/>
+  <w:LsdException Locked="false" Priority="68" Name="Medium Grid 2 Accent 6"/>
+  <w:LsdException Locked="false" Priority="69" Name="Medium Grid 3 Accent 6"/>
+  <w:LsdException Locked="false" Priority="70" Name="Dark List Accent 6"/>
+  <w:LsdException Locked="false" Priority="71" Name="Colorful Shading Accent 6"/>
+  <w:LsdException Locked="false" Priority="72" Name="Colorful List Accent 6"/>
+  <w:LsdException Locked="false" Priority="73" Name="Colorful Grid Accent 6"/>
+  <w:LsdException Locked="false" Priority="19" QFormat="true"
+   Name="Subtle Emphasis"/>
+  <w:LsdException Locked="false" Priority="21" QFormat="true"
+   Name="Intense Emphasis"/>
+  <w:LsdException Locked="false" Priority="31" QFormat="true"
+   Name="Subtle Reference"/>
+  <w:LsdException Locked="false" Priority="32" QFormat="true"
+   Name="Intense Reference"/>
+  <w:LsdException Locked="false" Priority="33" QFormat="true" Name="Book Title"/>
+  <w:LsdException Locked="false" Priority="37" SemiHidden="true"
+   UnhideWhenUsed="true" Name="Bibliography"/>
+  <w:LsdException Locked="false" Priority="39" SemiHidden="true"
+   UnhideWhenUsed="true" QFormat="true" Name="TOC Heading"/>
+  <w:LsdException Locked="false" Priority="41" Name="Plain Table 1"/>
+  <w:LsdException Locked="false" Priority="42" Name="Plain Table 2"/>
+  <w:LsdException Locked="false" Priority="43" Name="Plain Table 3"/>
+  <w:LsdException Locked="false" Priority="44" Name="Plain Table 4"/>
+  <w:LsdException Locked="false" Priority="45" Name="Plain Table 5"/>
+  <w:LsdException Locked="false" Priority="40" Name="Grid Table Light"/>
+  <w:LsdException Locked="false" Priority="46" Name="Grid Table 1 Light"/>
+  <w:LsdException Locked="false" Priority="47" Name="Grid Table 2"/>
+  <w:LsdException Locked="false" Priority="48" Name="Grid Table 3"/>
+  <w:LsdException Locked="false" Priority="49" Name="Grid Table 4"/>
+  <w:LsdException Locked="false" Priority="50" Name="Grid Table 5 Dark"/>
+  <w:LsdException Locked="false" Priority="51" Name="Grid Table 6 Colorful"/>
+  <w:LsdException Locked="false" Priority="52" Name="Grid Table 7 Colorful"/>
+  <w:LsdException Locked="false" Priority="46"
+   Name="Grid Table 1 Light Accent 1"/>
+  <w:LsdException Locked="false" Priority="47" Name="Grid Table 2 Accent 1"/>
+  <w:LsdException Locked="false" Priority="48" Name="Grid Table 3 Accent 1"/>
+  <w:LsdException Locked="false" Priority="49" Name="Grid Table 4 Accent 1"/>
+  <w:LsdException Locked="false" Priority="50" Name="Grid Table 5 Dark Accent 1"/>
+  <w:LsdException Locked="false" Priority="51"
+   Name="Grid Table 6 Colorful Accent 1"/>
+  <w:LsdException Locked="false" Priority="52"
+   Name="Grid Table 7 Colorful Accent 1"/>
+  <w:LsdException Locked="false" Priority="46"
+   Name="Grid Table 1 Light Accent 2"/>
+  <w:LsdException Locked="false" Priority="47" Name="Grid Table 2 Accent 2"/>
+  <w:LsdException Locked="false" Priority="48" Name="Grid Table 3 Accent 2"/>
+  <w:LsdException Locked="false" Priority="49" Name="Grid Table 4 Accent 2"/>
+  <w:LsdException Locked="false" Priority="50" Name="Grid Table 5 Dark Accent 2"/>
+  <w:LsdException Locked="false" Priority="51"
+   Name="Grid Table 6 Colorful Accent 2"/>
+  <w:LsdException Locked="false" Priority="52"
+   Name="Grid Table 7 Colorful Accent 2"/>
+  <w:LsdException Locked="false" Priority="46"
+   Name="Grid Table 1 Light Accent 3"/>
+  <w:LsdException Locked="false" Priority="47" Name="Grid Table 2 Accent 3"/>
+  <w:LsdException Locked="false" Priority="48" Name="Grid Table 3 Accent 3"/>
+  <w:LsdException Locked="false" Priority="49" Name="Grid Table 4 Accent 3"/>
+  <w:LsdException Locked="false" Priority="50" Name="Grid Table 5 Dark Accent 3"/>
+  <w:LsdException Locked="false" Priority="51"
+   Name="Grid Table 6 Colorful Accent 3"/>
+  <w:LsdException Locked="false" Priority="52"
+   Name="Grid Table 7 Colorful Accent 3"/>
+  <w:LsdException Locked="false" Priority="46"
+   Name="Grid Table 1 Light Accent 4"/>
+  <w:LsdException Locked="false" Priority="47" Name="Grid Table 2 Accent 4"/>
+  <w:LsdException Locked="false" Priority="48" Name="Grid Table 3 Accent 4"/>
+  <w:LsdException Locked="false" Priority="49" Name="Grid Table 4 Accent 4"/>
+  <w:LsdException Locked="false" Priority="50" Name="Grid Table 5 Dark Accent 4"/>
+  <w:LsdException Locked="false" Priority="51"
+   Name="Grid Table 6 Colorful Accent 4"/>
+  <w:LsdException Locked="false" Priority="52"
+   Name="Grid Table 7 Colorful Accent 4"/>
+  <w:LsdException Locked="false" Priority="46"
+   Name="Grid Table 1 Light Accent 5"/>
+  <w:LsdException Locked="false" Priority="47" Name="Grid Table 2 Accent 5"/>
+  <w:LsdException Locked="false" Priority="48" Name="Grid Table 3 Accent 5"/>
+  <w:LsdException Locked="false" Priority="49" Name="Grid Table 4 Accent 5"/>
+  <w:LsdException Locked="false" Priority="50" Name="Grid Table 5 Dark Accent 5"/>
+  <w:LsdException Locked="false" Priority="51"
+   Name="Grid Table 6 Colorful Accent 5"/>
+  <w:LsdException Locked="false" Priority="52"
+   Name="Grid Table 7 Colorful Accent 5"/>
+  <w:LsdException Locked="false" Priority="46"
+   Name="Grid Table 1 Light Accent 6"/>
+  <w:LsdException Locked="false" Priority="47" Name="Grid Table 2 Accent 6"/>
+  <w:LsdException Locked="false" Priority="48" Name="Grid Table 3 Accent 6"/>
+  <w:LsdException Locked="false" Priority="49" Name="Grid Table 4 Accent 6"/>
+  <w:LsdException Locked="false" Priority="50" Name="Grid Table 5 Dark Accent 6"/>
+  <w:LsdException Locked="false" Priority="51"
+   Name="Grid Table 6 Colorful Accent 6"/>
+  <w:LsdException Locked="false" Priority="52"
+   Name="Grid Table 7 Colorful Accent 6"/>
+  <w:LsdException Locked="false" Priority="46" Name="List Table 1 Light"/>
+  <w:LsdException Locked="false" Priority="47" Name="List Table 2"/>
+  <w:LsdException Locked="false" Priority="48" Name="List Table 3"/>
+  <w:LsdException Locked="false" Priority="49" Name="List Table 4"/>
+  <w:LsdException Locked="false" Priority="50" Name="List Table 5 Dark"/>
+  <w:LsdException Locked="false" Priority="51" Name="List Table 6 Colorful"/>
+  <w:LsdException Locked="false" Priority="52" Name="List Table 7 Colorful"/>
+  <w:LsdException Locked="false" Priority="46"
+   Name="List Table 1 Light Accent 1"/>
+  <w:LsdException Locked="false" Priority="47" Name="List Table 2 Accent 1"/>
+  <w:LsdException Locked="false" Priority="48" Name="List Table 3 Accent 1"/>
+  <w:LsdException Locked="false" Priority="49" Name="List Table 4 Accent 1"/>
+  <w:LsdException Locked="false" Priority="50" Name="List Table 5 Dark Accent 1"/>
+  <w:LsdException Locked="false" Priority="51"
+   Name="List Table 6 Colorful Accent 1"/>
+  <w:LsdException Locked="false" Priority="52"
+   Name="List Table 7 Colorful Accent 1"/>
+  <w:LsdException Locked="false" Priority="46"
+   Name="List Table 1 Light Accent 2"/>
+  <w:LsdException Locked="false" Priority="47" Name="List Table 2 Accent 2"/>
+  <w:LsdException Locked="false" Priority="48" Name="List Table 3 Accent 2"/>
+  <w:LsdException Locked="false" Priority="49" Name="List Table 4 Accent 2"/>
+  <w:LsdException Locked="false" Priority="50" Name="List Table 5 Dark Accent 2"/>
+  <w:LsdException Locked="false" Priority="51"
+   Name="List Table 6 Colorful Accent 2"/>
+  <w:LsdException Locked="false" Priority="52"
+   Name="List Table 7 Colorful Accent 2"/>
+  <w:LsdException Locked="false" Priority="46"
+   Name="List Table 1 Light Accent 3"/>
+  <w:LsdException Locked="false" Priority="47" Name="List Table 2 Accent 3"/>
+  <w:LsdException Locked="false" Priority="48" Name="List Table 3 Accent 3"/>
+  <w:LsdException Locked="false" Priority="49" Name="List Table 4 Accent 3"/>
+  <w:LsdException Locked="false" Priority="50" Name="List Table 5 Dark Accent 3"/>
+  <w:LsdException Locked="false" Priority="51"
+   Name="List Table 6 Colorful Accent 3"/>
+  <w:LsdException Locked="false" Priority="52"
+   Name="List Table 7 Colorful Accent 3"/>
+  <w:LsdException Locked="false" Priority="46"
+   Name="List Table 1 Light Accent 4"/>
+  <w:LsdException Locked="false" Priority="47" Name="List Table 2 Accent 4"/>
+  <w:LsdException Locked="false" Priority="48" Name="List Table 3 Accent 4"/>
+  <w:LsdException Locked="false" Priority="49" Name="List Table 4 Accent 4"/>
+  <w:LsdException Locked="false" Priority="50" Name="List Table 5 Dark Accent 4"/>
+  <w:LsdException Locked="false" Priority="51"
+   Name="List Table 6 Colorful Accent 4"/>
+  <w:LsdException Locked="false" Priority="52"
+   Name="List Table 7 Colorful Accent 4"/>
+  <w:LsdException Locked="false" Priority="46"
+   Name="List Table 1 Light Accent 5"/>
+  <w:LsdException Locked="false" Priority="47" Name="List Table 2 Accent 5"/>
+  <w:LsdException Locked="false" Priority="48" Name="List Table 3 Accent 5"/>
+  <w:LsdException Locked="false" Priority="49" Name="List Table 4 Accent 5"/>
+  <w:LsdException Locked="false" Priority="50" Name="List Table 5 Dark Accent 5"/>
+  <w:LsdException Locked="false" Priority="51"
+   Name="List Table 6 Colorful Accent 5"/>
+  <w:LsdException Locked="false" Priority="52"
+   Name="List Table 7 Colorful Accent 5"/>
+  <w:LsdException Locked="false" Priority="46"
+   Name="List Table 1 Light Accent 6"/>
+  <w:LsdException Locked="false" Priority="47" Name="List Table 2 Accent 6"/>
+  <w:LsdException Locked="false" Priority="48" Name="List Table 3 Accent 6"/>
+  <w:LsdException Locked="false" Priority="49" Name="List Table 4 Accent 6"/>
+  <w:LsdException Locked="false" Priority="50" Name="List Table 5 Dark Accent 6"/>
+  <w:LsdException Locked="false" Priority="51"
+   Name="List Table 6 Colorful Accent 6"/>
+  <w:LsdException Locked="false" Priority="52"
+   Name="List Table 7 Colorful Accent 6"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Mention"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Smart Hyperlink"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Hashtag"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Unresolved Mention"/>
+  <w:LsdException Locked="false" SemiHidden="true" UnhideWhenUsed="true"
+   Name="Smart Link"/>
+ </w:LatentStyles>
+</xml><![endif] [if gte mso 10]>
+<style>
+ /* Style Definitions */
+ table.MsoNormalTable
+        {mso-style-name:普通表格;
+        mso-tstyle-rowband-size:0;
+        mso-tstyle-colband-size:0;
+        mso-style-noshow:yes;
+        mso-style-priority:99;
+        mso-style-parent:"";
+        mso-padding-alt:0cm 5.4pt 0cm 5.4pt;
+        mso-para-margin:0cm;
+        mso-pagination:widow-orphan;
+        font-size:10.0pt;
+        font-family:"Times New Roman",serif;}
+</style>
+<![endif] StartFragment Ten years on, Birds is not becoming something different. It is becoming more fully itself.EndFragment
+
+</div>
+		<div>Seconds
+ Item 1 Strange Burrata (V) $26
+Strange Flavoured Sauce, Peanut Crumbs, Olive Tapenade, Cherry Tomato, ‘Pain Aux Yacai’
+ Item 2 Chairman Dan $27
+‘Dan Dan Noodle’ Capellini, Pork Ragout, Egg Confit, Hint of Spiciness
+ Item 3 Salsify & Chestnut $25
+Étuvée à la Shao Xing, White Bean, Lard, Burnt Shallot, Grain ‘Risotto’, Baby Spinach Discs
+ Item 4 Barramundi Chazuke $36
+Pan-seared Fillet, Sichuan Hot and Sour Broth, Rice, Ikura
+ Item 5 Wok-Fried Tiger Prawn $48
+Yi Bing Yacai, Radicchio, Coriander Purée
+ Item 6 Mushroom Mafaldine (V) $26
+Mafaldine, Dried Mixed Mushroom, Sautéed with Bullet Head, Mushroom Sabayon
+ Item 7 Mussel Stew $34
+Chinese Yam Noodles, Bok Choy, Fierce Yellow Broth, Numb & Spicy
+</div>
+		<div>Sides
+ Item 1 Spice Fries (V) $16
+House-made Spice, Sour Cream Dip
+ Item 2 Seasonal Vegetables (V) $23
+Sautéed Vegetables Sichuan Way, Olive Soil, Feta
+ Item 3 Pear Salad (V) $21
+Asian Pear, Parmesan, Vine Pepper Citrus Dressing, Caramelised Nuts
+ Item 4 Baby Coloured Potato (V) $18
+Roasted Baby Potatoes, Ginger Butter Glaze, Parmesan
+</div>
+		<div>Starters
+ Item 1 Sichuan ‘Kimchi’ (V) $14
+House-made ‘Kimchi’, Yuzu Jam, Pear, Bocconcini, Parmesan, Brioche
+ Item 2 Crab and Avocado Bruschetta $18
+Avocado Guacamole with Crab, Green Apple, Tonburi, Brioche
+ Item 3 Find the Chicken in the Chillies $19
+Wok-Fried Popcorn Chicken Sichuan Style
+ Item 4 Crispy Frog Legs $21
+House-made Chilli Sand, Green Garlic Purée, House Pickles
+ Item 5 Abalone.Prawn.Clam $24
+Raw and Cooked Seafood, Green Tiger’s Milk, Wheat Noodle, Guindillas, Numb, Cold
+ Item 6 Burnt Chilli Eggplant (V) $18
+House-made Flatbread, Century Egg, Coriander Purée, Pickled Onion Head
+ Item 7 Roasted Brussels Sprouts (V) $19
+Almond, White Bean, Sichuan Sweet Vinegar, Sichuan Pistachio Soil, Feta
+ Item 8 Birds Skewer $25
+Prawn, Celtuce, Aburaage Tofu, Black Fungus, Shiitake, Konnyaku, White Soup
+ Item 9 Pork Dumplings $18
+Sichuan Dressing, Butternut Purée, Sage
+</div>
+		<div>Desserts
+ Item 1 Red Date ‘Clafoutis’ for 2 $28
+(20 mins waiting time)
+Fig, Macadamia, Buckwheat Candy, Mascarpone Crémeux, Red Date Jelly
+ Item 2 Glutinous Rice Cake $17
+Sesame Parfait, Pistachio, Red Sugar Caramel
+ Item 3 White Pearl $16
+Lychee Rose Rice Wine Sorbet, Cacao Nibs, Airy Mochi, Osmanthus Tapioca Jelly
+ Item 4 Sparkling Ice Jelly $15
+Kiwi, Moët, Dill Coulis, Muscat Grape & Mint Granita
+ Item 5 Wild Strawberry $13
+Mini Gateaux, Hawthorn Berry Compote
+</div>
+		<div>Big Plates
+ Item 1 Loup De Mer $98
+Whole European Seabass Seared with Scales, Saffron Yellow Pepper Broth, Petite Napa Cabbage, Dongqu Shaoxing
+ Item 2 Homestyle Pork Belly Rice $68
+Homestyle Flavoured, Tea Tree Mushroom Garlic Rice, Jamón Ibérico, Egg Confit, Kale, Truffle
+ Item 3 Steak Au Poivre (700g) $220
+Rubia Gallega OP Rib, Sichuan-inspired Pepper Sauce, Baby Coloured Potato, Broccolini, Hazelnut
+</div>
+		<div>What’s On This September
+Birds of a Feather reopens on September 5th.
+Step into our new chapter on Amoy Street, with a renewed space, an evolved menu and the same warmth that has shaped Birds for the past ten years.
+Come for lunch, dinner or cocktails at the bar, and be among the first to settle back in.</div>
+		<div>Sichuan is part of our instinct — its fragrance, heat, acidity, depth and balance. Global influences allow each dish to take on its own character.Over ten years, these ideas have evolved into a culinary language of our own — layered, distinctive and free from convention. Every element is considered, from flavour and composition to presentation and the pieces chosen for the table. EndFragment</div>
+		<div>Instinct, Expression, Craft, Precision
+</div>
+		<div>Sichuan is part of our instinct — its fragrance, heat, acidity, depth and balance. Global influences allow each dish to take on its own character.
+
+ Over ten years, these ideas have evolved into a culinary language of our own — layered, distinctive and free from convention.Every element is considered, from flavour and composition to presentation and the pieces chosen for the table.</div>
+		<div>Birds of a Feather
+</div>
+		<div>Our Story
+</div>
+		<div>Events
+</div>
+		<div>Book
+</div>
+		<div>X
+</div>
+		<div>Menu</div>
+		<div>From first drinks to final toasts, every detail at Birds is shaped with care.
+
+Food, drinks, service and setting are carefully balanced, giving each occasion a sense of character and ease.Whatever the occasion, we create the setting — you bring the people, the stories and the moment.</div>
+		<div>From intimate dinners to brand events, weddings and milestone celebrations, Birds of a Feather offers a distinctive setting for up to 80 seated guests. Bespoke menus, considered drinks and warm hospitality shape every occasion into something distinctly yours.</div>
+		<div>Birthdays, engagements and milestone moments come to life in a room made for gathering. From long seated meals to lively drinks-led occasions, every celebration is shaped with flavour, atmosphere and the people who matter most.</div>
+		<div>A Distinctive Setting for Every OccasionEndFragment</div>
+		<div>Chef Eugene See joined Birds of a Feather shortly after it opened in 2016, bringing with him a foundation in a few European dining and fine dining establishment.
+
+Sichuan cuisine was unfamiliar territory. That became part of the journey.
+
+ Over the years, repeated visits to Chengdu, conversations with chefs and makers, and a deepening understanding of Sichuan flavours, ingredients and techniques have shaped the way he cooks. Rather than following a fixed formula, Eugene draws from Sichuan flavour profiles, French technique, ideas from around the world and his own creative instinct — allowing each dish to find its own character. Nearly a decade later, that process of curiosity and exploration continues to shape the culinary language of Birds.</div>
+		<div>A Decade of Exploration
+</div>
+		<div>Ten Years, Still Evolving, From 2016 to 2026 Birds of a Feather began on Amoy Street in 2016 with a simple idea: to create a place where different flavours, cultures and people could meet.Over the past decade, Birds has continued to evolve, in its cooking, its space and the way people experience it. What began as an exchange of culinary ideas has grown into a language of its own, rooted in Sichuan flavour, shaped by French technique and open to influences from around the world.Our name speaks to the instinct that certain people will always find their way to one another. It also carries an older reference to the Golden Sun Bird of Chengdu, a symbol of light, continuity and shared spirit. That sense of warmth, belonging and shared spirit sits at the heart of Birds.Set within two heritage shophouses, the restaurant and bar is shaped by natural light, warm timber, thoughtful details and a renewed sense of hospitality. From the dining room to the bar, it is a home for food, drinks, conversation and the people who make a table come alive.Ten years on, Birds is not becoming something different. It is becoming more fully itself.</div>
+		<div>Kitchen Opening Hours
+
+MONDAY- SUNDAY
+11:30am - 2:30pm    5:30pm - 9:30pm
+</div>
+		<div>Privacy | Terms by The Foreign Project Group</div>
+		<div>Location
+
+115 Amoy St, #01-01, Singapore 069935
+
+Tel: +65 9755 7115
+
+Email: enquiry@birdsofafeather.com.sg
+</div>
+		<div>Facebook ↗ 
+</div>
+		<div>View on Map↗︎
+</div>
+		<div>Opening Hours
+
+MONDAY- SATURDAY
+11:30am - 3:00pm    5:30pm - 11:30pm
+
+SUNDAY
+11:30am - 3:00pm    5:30pm - 10:00pm</div>
+		<div>Visit Us On</div>
+		<div>Instagram ↗
+</div>
+		<div>Location
+
+115 Amoy St, #01-01, Singapore 069935
+
+Tel: +65 9755 7115
+
+Email: enquiry@birdsofafeather.com.sg
+</div>
+		<div>Instagram ↗︎
+</div>
+		<div>Facebook ↗︎
+</div>
+		<div>Opening Hours
+
+MONDAY- SATURDAY
+11:30am - 3:00pm    5:30pm - 11:30pm
+
+SUNDAY
+11:30am - 3:00pm    5:30pm - 10:00pm</div>
+		<div>Kitchen Opening Hours
+
+MONDAY- SUNDAY
+11:30am - 2:30pm    5:30pm - 9:30pm
+</div>
+		<div>Wine & Spirits Catalogue
+ Sake Sake
+Onsen Aperitif $12
+Minakuchi Brewery · Matsuyama, Ehime · Sparkling Junmai · 7% · Chilled 200ml
+Kitano Roman $40
+Kobayashi Brewery · Kuriyama, Hokkaido · Ginpu, Suisei · Polished 60% · SMV +10 · Warm 300ml
+The Night Emperor $95
+Fujii Brewery · Takehara, Hiroshima · Hattan Nishiki · Polished 65% · SMV +8 · No Charcoal Filtration · Chilled 720ml
+Hirai $95
+Hirai Brewery · Agano-shi, Niigata · Gohyakumangoku, Koshiibuki · Polished 48% · SMV +5 · Chilled 720ml
+Sakemirai $100
+Otokoyama Brewery · Yamagata · Miyama Nishiki · Polished 45% · SMV +3 · Chilled 720ml
+Niseko $120
+Niseko Brewery · Niseko, Hokkaido · Suisei · Polished 50% · SMV +0 · Chilled 720ml
+ Beer Beer
+Kirin Ichiban (Draft) $12 (Half) / $17 (Full)
+Japanese Lager · Japan
+ Wine Wine
+Sparkling & Champagne
+Piccini Prosecco Spumante Extra Dry N.V. $16 / $85
+Glera · Prosecco DOC, Veneto, Italy
+Domaine Siebert “Terre de Pinot Noir” Rosé, Crémant d’Alsace 2023 $95
+Pinot Noir · Crémant d’Alsace AOC, Alsace, France
+Moët & Chandon Brut Impérial N.V. $23 / $135
+Pinot Noir, Meunier, Chardonnay · Champagne, France
+Moët & Chandon Rosé Impérial N.V. $205
+Pinot Noir, Meunier, Chardonnay · Champagne, France
+Moët & Chandon Grand Vintage 2016 $38 / $220
+Pinot Noir, Meunier, Chardonnay · Champagne, France
+Dom Pérignon 2015 $560
+Pinot Noir, Chardonnay · Champagne, France
+Rosé & Dessert
+Marrenon “Pétula” Rosé 2024 $16 / $85
+Syrah, Grenache · Luberon, Rhône Valley, France
+Château d'Esclans Whispering Angel 2024 $100
+Grenache, Cinsault, Rolle · Côtes de Provence, France
+Cailongjin “JinDing” Icewine 2016 $14 (60ml) / $145
+Vidal · Huanren, Liaoning, China
+House White
+Alto Los Romeros Classic Chardonnay 2025 $16 / $80
+Chardonnay · Central Valley, Chile
+Bolla “Il Gambero” Soave Classico 2024 $17 / $90
+Garganega, Trebbiano di Soave · Soave Classico DOC, Veneto, Italy
+Xanadu Sauvignon Blanc Semillon 2024 $18 / $100
+Sauvignon Blanc, Semillon · Margaret River, Western Australia
+Domaine Valentin Zusslin Gewürztraminer “Bollenberg” 2022 $22 / $125
+Gewürztraminer · Alsace, France
+Domaine Graeme & Julie Bott Condrieu 2023 $32 / $185
+Viognier · Condrieu, Northern Rhône, France
+House Red
+Cantina Trevigiana Merlot 2021 $16 / $80
+Merlot · Veneto IGT, Italy
+Familia Torres Altos Ibéricos Crianza 2022 $17 / $90
+Tempranillo · Rioja DOCa, Spain
+Little Yering 2025 $18 / $100
+Pinot Noir · Victoria, Australia
+Domaine des Roches Neuves Thierry Germain “La Marginale” 2019 $28 / $140
+Cabernet Franc · Saumur-Champigny, Loire Valley, France
+Célèbre China Himalaya “All of Me” Red 2019 $34 / $190
+Cabernet Sauvignon, Rose Honey · Yunnan, China
+Cellar White
+Dr. Hermann Erdener Treppchen Riesling Kabinett No. 6 2022 $125
+Riesling · Mosel, Germany
+Domaine Combier Crozes-Hermitage “Cuvée L” Blanc 2023 $120
+Marsanne · Crozes-Hermitage AOC, Northern Rhône, France
+Domaine Ellevin 2024 $125
+Chardonnay · Chablis, Bourgogne, France
+Domaine Thomas et Fils Sancerre “Le Pierrier” 2024 $130
+Sauvignon Blanc · Sancerre, Loire Valley, France
+Domaine Chanson Pernand-Vergelesses 1er Cru “En Caradeux” 2023 $165
+Chardonnay · Pernand-Vergelesses 1er Cru AOC, Bourgogne, France
+Château Simone Palette Blanc 2021 $220
+Clairette, Grenache Blanc, Bourboulenc, Ugni Blanc, Muscat Blanc · Palette, Provence, France
+Domaine de Montille Corton-Charlemagne Grand Cru 2022 $850
+Chardonnay · Corton-Charlemagne Grand Cru, Bourgogne, France
+Kanaan Winery 2024 $95
+Riesling · Ningxia, China
+Katsunuma Jozo Koshu Terroir Selection “Iwai” 2023 $105
+Koshu · Yamanashi, Japan
+Cloudy Bay 2025 $120
+Sauvignon Blanc · Marlborough, New Zealand
+Ministry of Clouds Adelaide Hills 2023 $160
+Chardonnay · Adelaide Hills, South Australia
+Cakebread Cellars 2023 $170
+Sauvignon Blanc · North Coast, California, USA
+Cellar Red
+Confidences de Prieuré-Lichine 2020 $135
+Cabernet Sauvignon, Merlot · Margaux, Bordeaux, France
+Château Cantemerle 2017 $155
+Cabernet Sauvignon, Merlot, Petit Verdot · Haut-Médoc, Bordeaux, France
+C des Carmes Haut-Brion 2022 $185
+Cabernet Sauvignon, Merlot, Petit Verdot · Pessac-Léognan, Bordeaux, France
+Le Petit Ducru de Ducru-Beaucaillou 2021 $210
+Cabernet Sauvignon, Merlot, Petit Verdot · Saint-Julien, Bordeaux, France
+Château Lafon-Rochet 2017 $210
+Cabernet Sauvignon, Merlot, Petit Verdot, Cabernet Franc · Saint-Estèphe, Bordeaux, France
+Château Simard 2015 $140
+Merlot, Cabernet Franc · Saint-Émilion Grand Cru, Bordeaux, France
+Château Clinet 2009 $1050
+Merlot, Cabernet Franc, Cabernet Sauvignon · Pomerol, Bordeaux, France
+Édouard Delaunay Bourgogne Côte d’Or Pinot Noir 2021 $110
+Pinot Noir · Bourgogne Côte d’Or AOC, Bourgogne, France
+Domaine Vincent Bouzereau Corton Grand Cru “Clos des Fiètres” 2023 $275
+Pinot Noir · Corton Grand Cru, Bourgogne, France
+Domaine de Montcalmès 2022 $165
+Syrah, Grenache, Mourvèdre · Terrasses du Larzac, Languedoc, France
+Château La Nerthe, Châteauneuf-du-Pape 2021 $220
+Grenache, Syrah, Mourvèdre, Cinsault · Châteauneuf-du-Pape, Rhône Valley, France
+Villa Poggio Salvi “Caspagnolo,” Chianti Colli Senesi 2022 $100
+Sangiovese · Chianti Colli Senesi, Toscana, Italy
+Le Volte dell’Ornellaia 2020 $130
+Merlot, Cabernet Sauvignon, Sangiovese · Toscana IGT, Tuscany, Italy
+Parusso “Perarmando” 2020 $320
+Nebbiolo · Barolo DOCG, Piemonte, Italy
+Le Serre Nuove dell'Ornellaia 2015 $335
+Merlot, Cabernet Sauvignon, Cabernet Franc, Petit Verdot · Bolgheri, Toscana, Italy
+Ministry of Clouds McLaren Vale 2024 $110
+Shiraz · McLaren Vale, South Australia
+Mud House Central Otago 2020 $110
+Pinot Noir · Central Otago, New Zealand
+Tiansai Vineyards “Skyline of Gobi” Selection 2018 $145
+Marselan · Xinjiang, China
+Terrazas de los Andes Grand Malbec 2021 $170
+Malbec · Mendoza, Argentina
+Duckhorn Vineyards Napa Valley 2022 $280
+Cabernet Sauvignon, Merlot, Cabernet Franc · Napa Valley, California, USA
+Opus One 2017 $950
+Cabernet Sauvignon, Petit Verdot, Cab Franc, Merlot, Malbec · Napa Valley, California, USA
+ Chinese Baijiu & Huangjiu Chinese Heritage · Baijiu & Huangjiu
+Pearl River Bridge 珠江桥 (Rice Aroma) $12 (30ml)
+Zhongshan Distillery · Zhongshan, Guangdong, China · 33% ABV
+Red Star Erguotou 红星二锅头 (Light Aroma) $15 (30ml)
+Red Star Distillery · Beijing, China · 56% ABV
+Confucius Family Liquor 孔府家酒 (Strong Aroma) $15 (30ml)
+Kongfujia Distillery · Qufu, Shandong, China · 39% ABV
+Shede 舍得 (Strong Aroma) $24 (30ml) / $240
+Tuopai Shede Distillery · Suining, Sichuan, China · 52% ABV
+Kweichow Moutai 贵州茅台 (Sauce Aroma) $45 (30ml) / $788
+Kweichow Moutai Distillery · Maotai, Guizhou · 53% ABV
+Dongqu Prestige Edition Shaoxing Wine 东趣 (Huangjiu) $15 (30ml)
+Dongqu · Shaoxing, Zhejiang · 16% ABV
+ Spirits (45ml / Bottle) Spirits (45ml / Bottle)
+Gin
+Gordon's $20
+37.5% · London Dry
+Bombay Sapphire $22
+40% · London Dry, vapor-infused
+No.3 $24
+46% · London Dry, small batch
+Tanqueray $22 / $170
+43% · London Dry
+Tanqueray No. Ten $24 / $210
+47.3% · London Dry, citrus-led
+Hendrick's $24 / $210
+41.1% · Cucumber & rose
+The Botanist $24
+46% · Islay Dry, 22 botanicals
+Roku Japanese $24
+43% · Sakura & yuzu
+Monkey 47 Sloe $25
+29% · Sloe berry
+Monkey 47 Schwarzwald $27
+47% · Dry, 47 botanicals
+Tequila & Mezcal
+Espolòn Blanco $22 / $180
+40% · 100% agave
+Código 1530 Blanco $24 / $210
+40% · Blanco tequila
+Don Julio Blanco $24 / $210
+40% · Unaged blanco tequila
+Don Julio Añejo $28
+40% · Añejo tequila
+Don Julio 1942 $45
+38% · Añejo, aged 2.5 years
+Clase Azul Reposado $48
+40% · Luxury aged
+Volcán de Mi Tierra X.A $36
+40% · Luxury aged
+Montelobos Ensamble Mezcal $27
+43.2% · Wild agave blend
+Vodka
+Smirnoff No. 21 $20 / $160
+40% · Unaged vodka · Russia
+Grey Goose $23 / $190
+40% · Winter wheat · France
+Ketel One $23 / $190
+40% · Winter wheat · Netherlands
+Belvedere $23
+40% · Dankowskie rye · Poland
+Aylesbury Duck $23
+40% · Corn-based · Canada
+Crystal Head $28
+40% · Corn-based · Canada
+Rum
+Captain Morgan White Rum $20 / $160
+40% · White rum · U.S. Virgin Islands (Caribbean)
+Myers's Original Dark Rum $22
+40% · Dark rum · Jamaica
+Diplomático Reserva Exclusiva $23
+40% · Aged rum · Venezuela
+TIKI LOVERS Pineapple Rum $24
+45% · Flavoured · Germany
+Bumbu The Original $24 / $210
+40% · Spiced aged rum · Barbados
+Ron Zacapa 23 Centenario $26
+40% · Solera-aged · Guatemala
+Whiskey & Whisky
+Westland American Oak $20
+46% · American single malt
+Maker's Mark $22 / $140
+45% · Wheated bourbon
+Bulleit Bourbon $23
+45% · High-rye straight bourbon
+Wild Turkey Kentucky Straight Bourbon $23
+40.5% · Straight bourbon
+Wild Turkey Kentucky Straight Rye $24
+40.5% · Straight rye
+Nikka From the Barrel $24
+51.4% · Japanese blended whisky
+The Chita $26 / $230
+43% · Japanese single grain
+Hibiki Japanese Harmony $35
+43% · Japanese blended whisky
+Yamazaki 12 Year Old $45
+43% · Japanese single malt
+Hakushu 12 Year Old $45
+43% · Japanese single malt, lightly peated
+Monkey Shoulder $23
+40% · Blended malt Scotch
+Johnnie Walker Black Label $22 / $180
+40% · Blended Scotch
+Johnnie Walker Black Ruby $24 / $200
+40% · Blended Scotch
+Johnnie Walker Gold Label Reserve $26
+40% · Blended Scotch
+Johnnie Walker Blue Label $40
+40% · Rare blended Scotch
+John Walker & Sons XR 21 $34
+40% · Blended Scotch
+The Macallan Sherry Oak 12 Years Old $30
+40% · Speyside single malt
+The Macallan Double Cask 15 Years Old $35
+43% · Speyside single malt
+Balvenie DoubleWood 12 Year Old $27
+40% · Speyside double cask single malt
+Singleton 12 Year Old $23 / $190
+40% · Speyside single malt
+Singleton 15 Year Old $26 / $240
+40% · Speyside single malt
+Singleton 18 Year Old $32
+40% · Speyside single malt
+Mortlach 12 Year Old $30 / $280
+43.4% · Speyside single malt
+Mortlach 16 Year Old $40 / $380
+43.4% · Speyside single malt
+Bruichladdich Classic Laddie $26
+50% · Islay unpeated single malt
+Laphroaig 10 Year Old $26
+40% · Islay heavily peated single malt
+Lagavulin 16 Year Old $30 / $280
+43% · Islay deeply smoky single malt
+Jameson Irish Whiskey $22
+40% · Blended Irish whiskey
+Brandy & Cognac
+St-Rémy VSOP $22
+36% · French brandy
+Barsol Pisco $24
+41.3% · Pisco · Peru
+Cardenal Mendoza Gran Reserva $26
+36% · Brandy de Jerez · Spain
+Chatelle Napoleon Rare $26
+36% · French brandy
+Rémy Martin VSOP $27
+40% · Fine Champagne Cognac
+Hennessy VSOP $28
+40% · Cognac
+Martell Cordon Bleu $39
+40% · Borderies blend Cognac
+Digestif & Liqueur
+Aperol $14
+11% · Bitter orange · Italy
+Campari $16
+25% · Bitter herbal · Italy
+Frangelico $18
+20% · Hazelnut liqueur · Italy
+Disaronno $20
+28% · Amaretto · Italy
+Bénédictine DOM $24
+40% · Herbal liqueur · France
+Chartreuse Green $24
+55% · Herbal digestif · France
+</div>
+		<div>Cocktails & Alc. 0%
+ Signature Cocktail[cite: 2] Signature Cocktail
+Spirit of Grain $26
+Shede Baijiu · Fermented Rice Wine · Jasmine Green Tea · Lemongrass · Passionfruit · Peach · Lime
+Journey to Chengdu $45
+Shede Baijiu · Moutai Baijiu · Gin · Lychee · Grapefruit · Mint Oolong · Rose Bitters · Pomegranate
+Alma $24
+Don Julio Blanco Tequila · Kyoho Grape · Yuzu · Lime
+Golden Hour $28
+Traditional Oolong Tea Infused Tequila · Dry Osmanthus · St-Germain · Lemon · Aromatic Bitters
+How Is It? $23
+Johnnie Walker Black Ruby Whisky · Litsea Cordial · Citrus · House-made Yuzu Ice
+Double Take $25
+Sichuan Pickled Chilli/Bullet Head Infused Vodka · Disaronno Amaretto · Mandarin · Passionfruit
+Someone Like You $23
+Butterfly Pea-Infused Tanqueray London Dry Gin · White Wine · Peach-Cucumber Cordial · Gold Glitter
+Meet at Amoy $28
+Pineapple Rum · Bénédictine · Cherry Heering · Ginger Beer
+Mandarin After Dark $28
+Gin · Amami Tankan Shochu · Campari · Grand Marnier · Fresh Mandarin · Lime Leaf
+For The Saké Of It $25
+Dogo Onsen Sparkling Sake · St-Rémy Brandy · Lychee · Rose Jasmine Kefir · Laozao Lychee Rose Sorbet
+Breakfast Club $28
+Traditional Coconut Kaya Jam Washed Bombay Sapphire Gin · Ondeh Ondeh Soju · Kaya · Coconut · Gula Melaka · Pandan
+ Classic Cocktail[cite: 2] Classic Cocktail
+Old Fashioned $21
+Negroni $21
+Margarita $21
+Kir Royale $21
+Espresso Martini $21
+Moscow Mule $21
+Mojito $21
+ Alc. 0%[cite: 2] Alc. 0%
+Blackforest $15
+Cold Drip · Mint Oolong · Cherry · Peach
+Between Us $15
+Cold Drip · Jasmine Green Tea · Grapefruit · Osmanthus · Lemongrass · Lime Leaf
+Mat-Chá Velvet $15
+Matcha · Osmanthus · Coconut Water · Mint Oolong · Cream Cheese · Lemon Zest
+The Signature $11
+Caramel Chocolate · Espresso Cubes · Warm Milk
+Angry Bird $13
+Berries · Orange · Yoghurt · Smoothie
+Passionate Spritz $13
+Yuzu · Passionfruit · Soda
+After Rain $13
+Black Tea · Yuzu · Citrus · Fresh Fruits
+</div>
+		<div>COCKTAIL MENU
+</div>
+		<div>SET MENU
+</div>
+		<div>WINE LIST
+</div>
+		<div>MAIN MENU
+</div>
+
+	</div>
+
+	<!-- end text content: -->
+
+  </body>
+</html>
