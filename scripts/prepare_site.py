@@ -11,6 +11,11 @@ RESOURCES = "birds website.hyperesources"
 HYPE_SCRIPT = "birdswebsite_hype_generated_script.js"
 ICONS = ("favicon.png", "favicon.ico", "apple-touch-icon.png")
 STATIC_FILES = ("robots.txt", "sitemap.xml", "social-image.jpg")
+ROUTER_SCRIPT = "hype-hash-router.js"
+ROUTER_HEAD = (
+    '<script src="hype-hash-router.js" '
+    'data-hype-route-aliases=\'{"menu":"mainmenu","ourstory":"our story","story":"our story"}\'></script>'
+)
 
 
 class HeadTags(HTMLParser):
@@ -118,7 +123,7 @@ def prepare_site(source):
     source = Path(source).resolve()
     output = source / "_site"
     required = [source / "index.html", source / RESOURCES / HYPE_SCRIPT,
-                source / "site" / "seo-head.html"]
+                source / "site" / "seo-head.html", source / "site" / ROUTER_SCRIPT]
     required.extend(source / "site" / "icons" / name for name in ICONS)
     required.extend(source / "site" / name for name in STATIC_FILES)
     for path in required:
@@ -129,7 +134,7 @@ def prepare_site(source):
     # Byte reads retain the original UTF-8 export's line endings.
     original = (source / "index.html").read_bytes().decode("utf-8")
     template = (source / "site" / "seo-head.html").read_bytes().decode("utf-8")
-    published = brand_head(original, template).encode("utf-8")
+    published = brand_head(original, template.rstrip() + "\n" + ROUTER_HEAD).encode("utf-8")
     if f"{RESOURCES.replace(' ', '%20')}/{HYPE_SCRIPT}" not in original:
         raise ValueError("Hype script reference is missing from index.html")
 
@@ -145,6 +150,7 @@ def prepare_site(source):
         shutil.copyfile(source / "site" / "icons" / name, output / name)
     for name in STATIC_FILES:
         shutil.copyfile(source / "site" / name, output / name)
+    shutil.copyfile(source / "site" / ROUTER_SCRIPT, output / ROUTER_SCRIPT)
     return output
 
 

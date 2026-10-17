@@ -41,6 +41,7 @@ class PrepareSiteTests(unittest.TestCase):
             b'<meta name="viewport" content="width=440">'
             b'<style>body { background: #eee; }</style>'
             b'<script>const note = \'<meta name="description" content="keep script">\';</script>'
+            b'<script>window.addEventListener("popstate", function () { designerHistory(); });</script>'
             b'<!-- <link rel="icon" href="keep-comment.png"> -->'
             b'</head>\r\n<body><script src="birds%20website.hyperesources/'
             b'birdswebsite_hype_generated_script.js?97637"></script>'
@@ -78,6 +79,8 @@ class PrepareSiteTests(unittest.TestCase):
         (self.source / "site" / "robots.txt").write_bytes(b"User-agent: *\nAllow: /\nSitemap: https://birdsofafeather.com.sg/sitemap.xml\n")
         (self.source / "site" / "sitemap.xml").write_bytes(b'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://birdsofafeather.com.sg/</loc></url></urlset>\n')
         (self.source / "site" / "social-image.jpg").write_bytes(b"official social image")
+        self.router = b"/* production router */\r\ninstallRouter();\r\n"
+        (self.source / "site" / "hype-hash-router.js").write_bytes(self.router)
 
     def publish_with_extra_head(self, extra):
         (self.source / "index.html").write_bytes(self.original.replace(b"</head>", extra + b"</head>"))
@@ -101,7 +104,34 @@ class PrepareSiteTests(unittest.TestCase):
             self.assertEqual((self.output / name).read_bytes(), (self.source / "site" / "icons" / name).read_bytes())
         for name in ("robots.txt", "sitemap.xml"):
             self.assertEqual((self.output / name).read_bytes(), (self.source / "site" / name).read_bytes())
-        self.assertEqual(set(path.name for path in self.output.iterdir()), {"index.html", RESOURCES, "favicon.png", "favicon.ico", "apple-touch-icon.png", "robots.txt", "sitemap.xml", "social-image.jpg"})
+        self.assertEqual(set(path.name for path in self.output.iterdir()), {"index.html", RESOURCES, "favicon.png", "favicon.ico", "apple-touch-icon.png", "robots.txt", "sitemap.xml", "social-image.jpg", "hype-hash-router.js"})
+
+    def test_router_is_blocking_at_end_of_head_after_designer_history_before_hype(self):
+        self.prepare(self.source)
+        published = (self.output / "index.html").read_bytes().decode("utf-8")
+        scripts = [attrs for tag, attrs in HeadTags(published).tags if tag == "script"]
+        routers = [attrs for attrs in scripts if attrs.get("src") == "hype-hash-router.js"]
+        self.assertEqual(len(routers), 1)
+        self.assertEqual(set(routers[0]), {"src", "data-hype-route-aliases"})
+        self.assertEqual(json.loads(routers[0]["data-hype-route-aliases"]), {
+            "menu": "mainmenu", "ourstory": "our story", "story": "our story",
+        })
+        router_position = published.index('<script src="hype-hash-router.js"')
+        self.assertLess(published.index('window.addEventListener("popstate"'), router_position)
+        self.assertRegex(published[router_position:], r'^<script [^>]+></script>\s*</head>')
+        self.assertLess(router_position, published.index(HYPE_SCRIPT))
+        self.assertEqual((self.output / "hype-hash-router.js").read_bytes(), self.router)
+
+    def test_missing_router_preserves_entire_previous_output(self):
+        self.prepare(self.source)
+        (self.output / "preview-marker.txt").write_bytes(b"previous preview")
+        previous = {path.relative_to(self.output): path.read_bytes()
+                    for path in self.output.rglob("*") if path.is_file()}
+        (self.source / "site" / "hype-hash-router.js").unlink()
+        with self.assertRaisesRegex(ValueError, "hype-hash-router.js"):
+            self.prepare(self.source)
+        self.assertEqual({path.relative_to(self.output): path.read_bytes()
+                          for path in self.output.rglob("*") if path.is_file()}, previous)
 
     def test_conflicting_metadata_is_replaced_including_case_and_rel_variants(self):
         old = (
@@ -163,6 +193,10 @@ class PrepareSiteTests(unittest.TestCase):
         self.assertIn(b"<title>Birds of a Feather</title>", (self.output / "index.html").read_bytes())
         self.assertFalse((self.output / "stale.txt").exists())
         self.assertFalse((self.output / RESOURCES / "nested" / "photo.jpg").exists())
+        published = (self.output / "index.html").read_bytes()
+        self.assertEqual(published.count(b'src="hype-hash-router.js"'), 1)
+        self.assertEqual((self.output / "hype-hash-router.js").read_bytes(), self.router)
+        self.assertEqual(published.split(b"</head>", 1)[1], self.original.split(b"</head>", 1)[1])
 
     def test_id_only_related_entities_require_merge_and_preserve_previous_site(self):
         self.prepare(self.source)
@@ -200,7 +234,7 @@ class PrepareSiteTests(unittest.TestCase):
         previous = (self.output / "index.html").read_bytes()
         for relative in (
             "index.html", RESOURCES + "/" + HYPE_SCRIPT,
-            "site/seo-head.html", "site/icons/favicon.png",
+            "site/seo-head.html", "site/hype-hash-router.js", "site/icons/favicon.png",
             "site/icons/favicon.ico", "site/icons/apple-touch-icon.png",
             "site/robots.txt", "site/sitemap.xml",
         ):
